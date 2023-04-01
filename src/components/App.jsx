@@ -1,14 +1,18 @@
-import { useState, useEffect } from 'react';
 import { nanoid } from 'nanoid';
 import { ContactsForm } from './ContactsForm/ContactsForm';
 import { ContactsList } from './ContactsList/ContactsList';
 import { Filter } from './Filter/Filter';
 import { Layout } from './Layout';
 import { GlobalStyle } from './GlobalStyle';
+import { addContact, deleteContact } from 'redux/contactsSlice';
+import { filterContacts } from 'redux/filterSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { getContactsArray, getFilterString } from 'redux/selectors';
 
 export function App() {
-  const [contacts, setContacts] = useState([]);
-  const [filter, setFilter] = useState('');
+  const contacts = useSelector(getContactsArray);
+  const filter = useSelector(getFilterString);
+  const dispatch = useDispatch();
 
   const contactAdd = evt => {
     const { name, number } = evt.target;
@@ -16,33 +20,18 @@ export function App() {
     if (contacts.some(item => item.name === name.value)) {
       alert(`${name.value} is already in contacts.`);
     } else {
-      setContacts([...contacts, {
-        id: nanoid(),
-        name: name.value,
-        number: number.value,
-      }]);
+      const id = nanoid();
+      dispatch(addContact({ id: id, name: name.value, number: number.value }));
     }
   };
 
   const contactDelete = id => {
-    setContacts(contacts.filter(item => item.id !== id));
+    dispatch(deleteContact(id));
   };
 
   const contactFind = evt => {
-    setFilter(evt.currentTarget.value);
+    dispatch(filterContacts(evt.currentTarget.value));
   };
-
-  //get from storage
-  useEffect(() => {
-    if (localStorage.getItem('Phonebook')) {
-      setContacts(JSON.parse(localStorage.getItem('Phonebook')));
-    }
-  }, []);
-
-  //to storage if contacts are updated
-  useEffect(() => {
-    localStorage.setItem('Phonebook', JSON.stringify(contacts));
-  }, [contacts]);
 
   return (
     <Layout>
@@ -51,11 +40,11 @@ export function App() {
 
       <h2>Contacts</h2>
       <Filter handleFind={contactFind} />
-      <ContactsList
-        contacts={contacts}
-        filterString={filter}
-        onDelete={contactDelete}
-      />
+        <ContactsList
+          contacts={contacts}
+          filterString={filter}
+          onDelete={contactDelete}
+        />
 
       <GlobalStyle />
     </Layout>
